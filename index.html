@@ -10,6 +10,7 @@
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <script>
     $(function () {
+      var uniqueId = Math.floor(Math.random() * (99999 - 11111 + 1)) + 11111;
       var socket = io();
       $('form').submit(function(){
         socket.emit('transferdata', {event: $('#public-event-name').val(), data: $('#event-data').val()});
@@ -20,6 +21,7 @@
       socket.on('transferdata', function(msg){
         $('#messages').append($('<li>').text(JSON.stringify(msg)));
       });
+      socket.emit("add-user", {uniqueId: uniqueId});
     });
   </script>
     <style>

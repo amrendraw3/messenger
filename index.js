@@ -1,10 +1,11 @@
-var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-var redis = require("redis"),
+var app 			 = require('express')(),
+		http       = require('http').Server(app),
+		io         = require('socket.io')(http),
+		redis      = require("redis"),
 		subscriber = redis.createClient(),
-  	publisher  = redis.createClient();
-  	
+		publisher  = redis.createClient(),
+		clients    = {};
+
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
@@ -14,6 +15,13 @@ io.on('connection', function(socket){
   
   socket.on('disconnect', function(){
     console.log('user disconnected');
+  });
+
+  socket.on('add-user', function(data){
+    clients[data.uniqueId] = {
+      "socket": socket.id
+    };
+    console.log("clients", clients);
   });
 
   socket.on('transferdata', function(msg){
