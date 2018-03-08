@@ -12,8 +12,6 @@
     $(function () {
       var socket = io();
       $('form').submit(function(){
-        console.log($('#event-name').val());
-        console.log($('#event-data').val());
         socket.emit('transferdata', {event: $('#public-event-name').val(), data: $('#event-data').val()});
         $('#event-name').val('');
         $('#event-data').val('');
