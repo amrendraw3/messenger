@@ -11,14 +11,25 @@
     <script>
     $(function () {
       var uniqueId = Math.floor(Math.random() * (99999 - 11111 + 1)) + 11111;
+      $("#myid").html(uniqueId);
       var socket = io();
       $('form').submit(function(){
-        socket.emit('transferdata', {event: $('#public-event-name').val(), data: $('#event-data').val()});
-        $('#event-name').val('');
+        if(!!$('#public-event-name').val()) { // Send public event if present
+          socket.emit('transferdata', {event: $('#public-event-name').val(), data: $('#event-data').val()});
+        }
+        if(!!$('#public-event-name').val() && !!$('#userUniqueId').val()) { // Send user-level event if present
+          console.log('User level event');
+          socket.emit('personaldata', {event: $('#public-event-name').val(), uniqueId: $('#userUniqueId').val(), data: $('#event-data').val()});
+        }
+        $('#public-event-name').val('');
+        $('#userUniqueId').val('');
         $('#event-data').val('');
         return false;
       });
-      socket.on('transferdata', function(msg){
+      socket.on('generalData', function(msg){
+        $('#messages').append($('<li>').text(JSON.stringify(msg)));
+      });
+      socket.on('personalData', function(msg){
         $('#messages').append($('<li>').text(JSON.stringify(msg)));
       });
       socket.emit("add-user", {uniqueId: uniqueId});
@@ -32,9 +43,10 @@
     <form action="">
       <div class="row">
         <div class="col-md-4">
-          <input type="text" id="public-event-name" class="form-control" placeholder="Event name">
+          <label for="">Unique id: <span id="myid"></span> </label>
+          <input type="text" id="public-event-name" class="form-control" placeholder="Public event name">
           <br>
-          <input type="text" id="single-event-name" class="form-control" placeholder="Event name">
+          <input type="text" id="userUniqueId" class="form-control" placeholder="User-level event name">
         </div>
         <div class="col-md-4">
           <textarea class="form-control" name="" id="event-data" cols="30" rows="5" placeholder="Event messages"></textarea>
