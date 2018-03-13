@@ -10,64 +10,60 @@ app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
 
-io.on('connection', function(socket){
-  console.log('a user connected');
+// Handle socket connection, event listeners and emitters
+io.on('connection', function(socket){ // User is connected
   
+  // Handle disconnect event of a connected user
   socket.on('disconnect', function(){
-    console.log('user disconnected');
     for(var uniqueId in clients) {
-      if(clients[uniqueId].socket === socket.id) {
-        console.log('Removing client id: ', uniqueId);
+      if(clients[uniqueId].socket === socket.id) { // Remove from connected users/sockets list
         delete clients[uniqueId];
         break;
       }
     }
   });
 
+  // Add user to internal connected user's management
   socket.on('add-user', function(data){
     clients[data.uniqueId] = {
       "socket": socket.id
     };
-    console.log("clients", clients);
   });
 
+  // Handle transfer data event, passed from front-end connected socket
   socket.on('transferdata', function(msg){
     // Write database logic here and publish event from redis
-  	console.log('msg: ', msg);
     publisher.publish("transferdata", JSON.stringify(msg));
   });
 
+  // Handle transfer data event to personal level, passed from front-end connected socket
   socket.on('personaldata', function(msg){
-    console.log('msg: ', msg);
     if(!!msg.uniqueId) {
       publisher.publish("personaldata", JSON.stringify(msg));
     }
-    // io.emit('transferdata', msg);
   });
 });
 
 // Handle all publish messages on subscribed channel from redis
 subscriber.on("message", function(channel, message) {
-  console.log("Message '", JSON.parse(message), "' on channel '" + channel + "' arrived!")
   var message = JSON.parse(message);
   if(channel === "transferdata") { // public event
-    console.log('Publishing public event!');
     io.emit('generalData', message);
   }
 
   if(channel === "personaldata") { // personal event
-    console.log('TODO: Publishing user-level event!');
     if (clients[message.uniqueId]){
       io.sockets.connected[clients[message.uniqueId].socket].emit("personalData", message);
     } else {
-      console.log("User does not exist: " + message.uniqueId); 
     }
   }
- });
+});
 
+// Subscribe redis events
 subscriber.subscribe("transferdata");
 subscriber.subscribe("personaldata");
 
+// Start HTTP server
 http.listen(3000, function(){
-  console.log('listening on *:3000');
+  console.log('Server is up and running at http://localhost:3000')
 });

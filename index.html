@@ -14,12 +14,15 @@
       $("#myid").html(uniqueId);
       var socket = io();
       $('form').submit(function(){
-        if(!!$('#public-event-name').val()) { // Send public event if present
-          socket.emit('transferdata', {event: $('#public-event-name').val(), data: $('#event-data').val()});
+        var publicEventName = $('#public-event-name').val();
+        var userUniqueId    = $('#userUniqueId').val();
+        var dataToTransfer  = $('#event-data').val();
+
+        if(!!publicEventName) { // Send public event if present
+          socket.emit('transferdata', {event: publicEventName, data: dataToTransfer});
         }
-        if(!!$('#public-event-name').val() && !!$('#userUniqueId').val()) { // Send user-level event if present
-          console.log('User level event');
-          socket.emit('personaldata', {event: $('#public-event-name').val(), uniqueId: $('#userUniqueId').val(), data: $('#event-data').val()});
+        if(!!publicEventName && !!userUniqueId) { // Send user-level event if present
+          socket.emit('personaldata', {event: publicEventName, uniqueId: userUniqueId, data: dataToTransfer});
         }
         $('#public-event-name').val('');
         $('#userUniqueId').val('');
