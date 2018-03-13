@@ -1,10 +1,10 @@
-var app 			 = require('express')(),
-		http       = require('http').Server(app),
-		io         = require('socket.io')(http),
-		redis      = require("redis"),
-		subscriber = redis.createClient(),
-		publisher  = redis.createClient(),
-		clients    = {};
+var app 			      = require('express')(),
+    http            = require('http').Server(app),
+    io              = require('socket.io')(http),
+    redis           = require("redis"),
+    redisSubscriber = redis.createClient(),
+    redisPublisher  = redis.createClient(),
+    clients         = {};
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
@@ -33,19 +33,19 @@ io.on('connection', function(socket){ // User is connected
   // Handle transfer data event, passed from front-end connected socket
   socket.on('transferdata', function(msg){
     // Write database logic here and publish event from redis
-    publisher.publish("transferdata", JSON.stringify(msg));
+    redisPublisher.publish("transferdata", JSON.stringify(msg));
   });
 
   // Handle transfer data event to personal level, passed from front-end connected socket
   socket.on('personaldata', function(msg){
     if(!!msg.uniqueId) {
-      publisher.publish("personaldata", JSON.stringify(msg));
+      redisPublisher.publish("personaldata", JSON.stringify(msg));
     }
   });
 });
 
 // Handle all publish messages on subscribed channel from redis
-subscriber.on("message", function(channel, message) {
+redisSubscriber.on("message", function(channel, message) {
   var message = JSON.parse(message);
   if(channel === "transferdata") { // public event
     io.emit('generalData', message);
@@ -55,13 +55,14 @@ subscriber.on("message", function(channel, message) {
     if (clients[message.uniqueId]){
       io.sockets.connected[clients[message.uniqueId].socket].emit("personalData", message);
     } else {
+      console.error('User with unique id ' + message.uniqueId + ' does not exist!');
     }
   }
 });
 
 // Subscribe redis events
-subscriber.subscribe("transferdata");
-subscriber.subscribe("personaldata");
+redisSubscriber.subscribe("transferdata");
+redisSubscriber.subscribe("personaldata");
 
 // Start HTTP server
 http.listen(3000, function(){
